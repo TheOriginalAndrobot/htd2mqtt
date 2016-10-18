@@ -1,0 +1,29 @@
+{
+  "name": "htd2mqtt",
+  "description": "Connect HTD Lync systems to MQTT",
+  "author": "Andy Swing <andy@swings.net> (https://github.com/TheOriginalAndrobot)",
+  "license": "MIT",
+  "version": "1.0.0",
+  "preferGlobal": true,
+  "bin": "./index.js",
+  "dependencies": {
+    "mqtt": "^1.14.1",
+    "yalm": "^4.0.2",
+    "yargs": "^5.0.0"
+  },
+  "keywords": [
+    "mqtt",
+    "smarthome",
+    "iot",
+    "htd",
+    "audio",
+    "multizone",
+    "lync",
+    "lync6",
+    "lync12"
+  ],
+  "repository": "https://github.com/TheOriginalAndrobot/htd2mqtt",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
