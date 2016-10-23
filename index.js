@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+//
+// HTD Lync to MQTT bridge
+//
+// Author: Andy Swing
+//
+
+
 var pkg = require('./package.json');
 var config = require('./config.js');
 var HTDLync = require('./htd.js');
@@ -21,7 +28,7 @@ var cmdStream = new PassThrough;
 var prevRawData = new Buffer(0);
 
 var rawDataStream = new net.Socket();
-var htd = new HTDLync(rawDataStream);
+var htd = new HTDLync(rawDataStream, log);
 
 
 //
@@ -55,18 +62,6 @@ rawDataStream.on('close', function () {
     mqtt.publish(config.topic + '/connected', '1');
 });
 
-rawDataStream.on('data', function (data) {
-    
-    var str = " ";
-    for (var ii = 0; ii < data.length; ii++) {
-        str += ('0x' + data[ii].toString(16).toUpperCase() + ' ');
-    }
-    log.debug('received length:', data.length);
-    log.debug('received data:', str);
-    
-    // TODO: parse incoming data
-});
-
 // Handle incoming raw data from device, parse out commands, send them for processing
 rawDataStream.on('data', function (newRawData) {
     
@@ -80,7 +75,7 @@ rawDataStream.on('data', function (newRawData) {
     var remainingBytes;
     
     // Pick up where we left off with any data left over from last time
-    log.debug('Prepended previous raw data:', prevRawData.toString('hex'));
+    log.debug('Prepended previous raw data (hex):', prevRawData.toString('hex'));
     var data = new Buffer(prevRawData.length + newRawData.length);
     prevRawData.copy(data);
     newRawData.copy(data, prevRawData.length);
@@ -232,22 +227,25 @@ cmdStream.on('readable', function () {
         case 0x0C:  // Zone Source Name
         case 0x0E:  // Zone Source Name (undocumented)
             cmdName = 'Source Name';
+            // String from device is null-terminated
             str = data.toString('utf8', 4, 14).split("\0").shift();
-            num = data.readUInt8(15)+1;
+            num = data.readUInt8(15)+1; // Note off-by-one error in protcol
             pubMQTT(topic+'sourcename/'+num, str);
             break;
         case 0x0D:  // Zone Name
             cmdName = 'Zone Name';
+            // String from device is null-terminated
             str = data.toString('utf8', 4, 14).split("\0").shift();
             num = data.readUInt8(15);
             pubMQTT(topic+'name', str);
             break;
     }
     
-    log.debug('Completed incoming response', cmdName);
+    log.debug('Completed incoming', cmdName, 'response');
     
 });
 
+// Shotcut for publsihing to MQTT and logging it
 function pubMQTT(topic, payload){
     log.debug('mqtt >', topic, payload);
     mqtt.publish(topic, payload);
@@ -292,7 +290,7 @@ mqtt.on('message', function (topic, payload) {
 
     var parts = topic.split('/');
     var zone = parts[parts.length-2];
-    var cmd = parts[parts.length-1];
+    var cmd = parts[parts.length-1].toLowerCase();
     
     log.debug('htd > zone:', zone, 'command:', cmd, 'value:', payload);
 
@@ -303,6 +301,9 @@ mqtt.on('message', function (topic, payload) {
         case 'volume':
             htd.setVolume(zone, payload);
             break;
+        case 'volumepercent':
+            htd.setVolumeByPercent(zone, payload);
+            break;
         case 'source':
             htd.setSource(zone, payload);
             break;
@@ -311,6 +312,27 @@ mqtt.on('message', function (topic, payload) {
             break;
         case 'dnd':
             htd.setDND(zone, payload);
+            break;
+        case 'update':
+            switch (payload) {
+                case 'status':
+                    htd.queryZoneStatus();
+                    break;
+                case 'fullstatus':
+                    htd.queryFullStatus();
+                    break;
+                case 'zonenames':
+                    htd.queryAllZoneNames();
+                    break;
+                case 'sourcenames':
+                    htd.queryAllSourceNames();
+                    break;
+                case 'all':
+                    htd.queryZoneStatus();
+                    htd.queryAllZoneNames();
+                    htd.queryAllSourceNames();
+                    break;
+            }
             break;
     }
 
@@ -321,6 +343,7 @@ mqtt.on('message', function (topic, payload) {
 // Grab initial data
 //
 
+// After program is stable (4 seconds), request info
 setTimeout(function() {
     
     if (!serialConnected || !mqttConnected) {
@@ -328,24 +351,20 @@ setTimeout(function() {
         return;
     }
     
+    /* Final response packet is buggy in the HTD firmware, so we'll do it piece by piece
+    log.info('Querying initial Full Status');
+    htd.queryFullStatus();
+    */
+    
     log.info('Querying initial Zone Status');
     htd.queryZoneStatus();
     
-    log.info('Querying initial Zone & Source Names');
-    for (var zone=1; zone<=12; zone++){
-        htd.queryZoneName(zone);
-        for (var src=1; src<=18; src++){
-            htd.querySourceName(zone, src);
-        }
-    }
+    log.info('Querying initial Zone Names');
+    htd.queryAllZoneNames();
+    
+    /* Currently buggy - some commands/responses get dropped
+    log.info('Querying initial Source Names');
+    htd.queryAllSourceNames();
+    */
     
 }, 4000);
-
-/*
-setTimeout(function() {
-    
-    log.info('queryFullStatus');
-    htd.queryFullStatus(0);
-    
-}, 8000);
-*/
