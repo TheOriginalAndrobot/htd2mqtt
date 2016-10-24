@@ -116,6 +116,11 @@ HTDLync.prototype.setVolume = function(zone, vol) {
         return;
     }
     
+    if (this.cleanZone(zone) == 0){
+        this.log.warn('Ignoring setting of volume on zone 0 (broadcast), as it is not supported by the HTD firmware');
+        return;
+    }
+    
     // For volume command, level 60 is 0x00, 59 is 0xFF, and 0 is 0xC4
     var volByte = volNum + 0x0C4;
     volByte = volByte & 0x0FF;

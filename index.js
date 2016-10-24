@@ -194,10 +194,13 @@ cmdStream.on('readable', function () {
             pubMQTT(topic+'alloff', (data[5] & 0x01<<6) ? 'ON' : 'OFF');
             pubMQTT(topic+'allon', (data[5] & 0x01<<7) ? 'ON' : 'OFF');
             // Data5
+            num = data.readUInt8(8) + 1; // Off by one error in protocol
             pubMQTT(topic+'source', data.readUInt8(8).toString());
             // Data6
             num = (data[9] == 0x00) ? 60 : (data.readUInt8(9) - 0xC4);
             pubMQTT(topic+'volume', num.toString());
+            num = Math.round((num/60)*100);
+            pubMQTT(topic+'volumepercent', num.toString());
             break;
         case 0x06:  // Audio and Keypad Exist channel
             cmdName = 'Exist Status';
@@ -330,7 +333,7 @@ mqtt.on('message', function (topic, payload) {
                 case 'all':
                     htd.queryZoneStatus();
                     htd.queryAllZoneNames();
-                    htd.queryAllSourceNames();
+                    //htd.queryAllSourceNames();
                     break;
             }
             break;
