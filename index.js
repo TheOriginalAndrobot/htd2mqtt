@@ -190,9 +190,9 @@ cmdStream.on('readable', function () {
             pubMQTT(topic+'mute', (data[4] & 0x01<<1) ? 'ON' : 'OFF');
             pubMQTT(topic+'dnd', (data[4] & 0x01<<2) ? 'ON' : 'OFF');
             // Data2
-            pubMQTT(topic+'party', (data[5] & 0x01<<5) ? 'ON' : 'OFF');
-            pubMQTT(topic+'alloff', (data[5] & 0x01<<6) ? 'ON' : 'OFF');
-            pubMQTT(topic+'allon', (data[5] & 0x01<<7) ? 'ON' : 'OFF');
+            //pubMQTT(topic+'party', (data[5] & 0x01<<5) ? 'ON' : 'OFF');
+            //pubMQTT(topic+'alloff', (data[5] & 0x01<<6) ? 'ON' : 'OFF');
+            //pubMQTT(topic+'allon', (data[5] & 0x01<<7) ? 'ON' : 'OFF');
             // Data5
             num = data.readUInt8(8) + 1; // Off by one error in protocol
             pubMQTT(topic+'source', data.readUInt8(8).toString());
