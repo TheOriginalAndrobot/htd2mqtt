@@ -3,7 +3,7 @@
   "description": "Connect HTD Lync systems to MQTT",
   "author": "Andy Swing <andy@swings.net> (https://github.com/TheOriginalAndrobot)",
   "license": "MIT",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "preferGlobal": true,
   "bin": "./index.js",
   "dependencies": {
