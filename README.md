@@ -152,6 +152,44 @@ First, as root, create `/usr/lib/systemd/system/htd2mqtt.service` with the follo
 **Note:** Be sure to edit the htd2mqtt command line args to match your setup as well as
 change the User and Group to what the program should run as.
 
+
+## OpenHAB Integration
+
+Below are example OpenHAB item configurations for some of the basic functions. Note that `msq` should
+be replaced with the name used in your OpenHAB MQTT configuration. The `Volume_Percent` item works
+very well as a Dimmer item as built-in sitemap controls, Hue emulation, etc. can control it easily.
+
+    Switch Audio_Zone_All_Power "Whole House Audio Power" (Audio) {mqtt=">[msq:htd/set/0/power:command:OFF:default]"}
+    Switch Audio_Zone_All_Mute "Whole House Audio Mute" (Audio) {mqtt=">[msq:htd/set/0/mute:command:*:default]"}
+    Number Audio_Bridge_Connection_Status "Audio Bridge Connection Status [%d]" (Audio) {mqtt="<[msq:htd/connected:state:default]"}
+    String Audio_Bridge_Update "Audio Bridge Update Request [%s]" (Audio) {mqtt=">[msq:htd/set/0/update:command:*:default]"}
+
+    Switch Audio_Zone_1_Power "Zone 1 Audio Power" (Audio) {mqtt=">[msq:htd/set/1/power:command:*:default], <[msq:htd/status/1/power:state:default]"}
+    Switch Audio_Zone_1_Mute "Zone 1 Audio Mute" (Audio) {mqtt=">[msq:htd/set/1/mute:command:*:default], <[msq:htd/status/1/mute:state:default]"}
+    Number Audio_Zone_1_Volume "Zone 1 Audio Volume [%d]" (Audio) {mqtt=">[msq:htd/set/1/volume:command:*:default], <[msq:htd/status/1/volume:state:default]"}
+    Dimmer Audio_Zone_1_Volume_Percent "Zone 1 Audio Volume [%d %%]" (Audio) {mqtt=">[msq:htd/set/1/volumepercent:command:*:default], <[msq:htd/status/1/volumepercent:state:default]"}
+    Number Audio_Zone_1_Source "Zone 1 Audio Source [%d]" (Audio) {mqtt=">[msq:htd/set/1/source:command:*:default], <[msq:htd/status/1/source:state:default]"}
+    Switch Audio_Zone_1_DND "Zone 1 Audio DND" (Audio) {mqtt=">[msq:htd/set/1/dnd:command:*:default], <[msq:htd/status/1/dnd:state:default]"}
+    String Audio_Zone_1_Zone_Name "Zone 1 Audio Zone Name [%s]" (Audio) {mqtt="<[msq:htd/status/1/name:state:default]"}
+    Contact Audio_Zone_1_Zone_Exists "Zone 1 Audio Zone Exists [MAP(contact_to_truefalse.map):%s]" (Audio) {mqtt="<[msq:htd/status/1/exists:state:MAP(onezero_to_contact.map)]"}
+    Contact Audio_Zone_1_Keypad_Present "Zone 1 Audio Keypad Present [MAP(contact_to_truefalse.map):%s]" (Audio) {mqtt="<[msq:htd/status/1/keypadpresent:state:MAP(onezero_to_contact.map)]"}
+
+These items rely on two map files that will need to be created in the transform directory:
+
+**contact_to_truefalse.map**
+
+    CLOSED=False
+    OPEN=True
+    -=unknown
+    undefined=unknown
+    
+**onezero_to_contact.map**
+
+    0=CLOSED
+    1=OPEN
+    undefined=unknown
+
+
 ## License
 
 MIT © [Andy Swing](https://github.com/TheOriginalAndrobot)
