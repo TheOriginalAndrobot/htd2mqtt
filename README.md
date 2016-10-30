@@ -189,6 +189,9 @@ These items rely on two map files that will need to be created in the transform 
     1=OPEN
     undefined=unknown
 
+You can find the two map files and a helper script for generating a full list of
+items in the `openhab` directory in this repository.
+
 
 ## License
 
